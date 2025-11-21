@@ -32,32 +32,37 @@ pipeline {
 			sam build '''
             }
         }
-        stage('Deploy to AWS') {
+       stage('Deploy to AWS') {
 	    steps {
         	withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-           	 script {
-                	def status = sh(
-                    	script: "sam deploy --no-confirm-changeset",
-                    	returnStatus: true
-               		 )
+            script {
 
-                	if (status != 0) {
-                    // SAM returns 1 when stack is unchanged → treat as success
-                    	echo "SAM returned status ${status}"
+                // Run SAM and capture BOTH output + exit code
+                def samOutput = sh(
+                    script: "sam deploy --no-confirm-changeset",
+                    returnStdout: true,
+                    returnStatus: true
+                )
 
-                    	def log = readFile("${env.WORKSPACE}/.aws-sam/build/template.yaml")
+                echo "SAM Output: ${samOutput}"
 
-                    	if (log.contains("No changes to deploy")) {
-                        echo "No changes detected. Proceeding without failure."
-                    } else {
-                        error "Deployment failed with status ${status}"
-                    }
+                // If exit code is 0 → success
+                if (samOutput == 0) {
+                    echo "Deployment succeeded"
+                    return
+                }
+
+                // Check if SAM output contains the message
+                if (samOutput.toString().contains("No changes to deploy")) {
+                    echo "No changes found — treating as SUCCESS."
+                } else {
+                    error "Deployment failed. See above logs."
                 }
             }
         }
     }
 }
-
+ 
 
 
         stage('Smoke Test') {
