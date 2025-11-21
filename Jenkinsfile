@@ -32,24 +32,25 @@ pipeline {
 			sam build '''
             }
         }
-
         stage('Deploy to AWS') {
-    steps {
-        withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-            script {
-                try {
-                    sh "sam deploy --no-confirm-changeset"
-                } catch (err) {
-                    if (err.toString().contains("No changes to deploy")) {
-                        echo "No changes detected. Deployment is already up to date."
-                    } else {
-                        error("Deployment failed: ${err}")
-                    }
-                }
-            }
-        }
-    }
-}
+    		steps {
+        	withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
+            	script {
+                	try {
+                    		sh """
+                    		sam deploy --no-confirm-changeset
+                    		"""
+                	} catch (Exception err) {
+                    		if (err.getMessage().contains("No changes to deploy")) {
+                        		echo "No changes detected. Deployment is already up to date."
+                   		 } else {
+                        	error "Deployment failed: ${err}"
+                    		}
+                	}
+            		}
+        		}
+    		}
+	}
 
 
         stage('Smoke Test') {
