@@ -4,6 +4,8 @@ pipeline {
     environment {
         AWS_DEFAULT_REGION = "ap-south-1"
         SAM_CLI_TELEMETRY = "0"
+	NPM_CONFIG_STRICT_SSL = "false"
+        NPM_CONFIG_REGISTRY = "http://registry.npmjs.org/"
     }
 
     stages {
@@ -24,7 +26,10 @@ pipeline {
 
         stage('SAM Build') {
             steps {
-                sh 'sam build'
+                sh '''
+			export NPM_CONFIG_STRICT_SSL=false
+			export NPM_CONFIG_REGISTRY=http://registry.npmjs.org/
+			sam build '''
             }
         }
 
