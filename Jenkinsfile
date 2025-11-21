@@ -50,24 +50,25 @@ pipeline {
 }
 
         stage('Smoke Test') {
-	    steps {
+    steps {
         echo "Running Smoke Tests..."
 
         sh '''
-        # 1. Test Create User API
+        echo "---- CREATE USER ----"
         CREATE_RESPONSE=$(curl -s -X POST https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user \
             -H "Content-Type: application/json" \
             -d '{"name":"TestUser","email":"test@example.com"}')
 
         echo "Create Response: $CREATE_RESPONSE"
 
-        USER_ID=$(echo $CREATE_RESPONSE | jq -r '.id')
-        echo "User ID: $USER_ID"
+        USER_ID=$(echo $CREATE_RESPONSE | jq -r '.userId')
+        echo "Extracted User ID: $USER_ID"
 
-        # 2. Test Get User API
+        echo "---- GET USER ----"
         curl -s https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user/$USER_ID
 
-        # 3. Test Image Upload
+        echo "---- UPLOAD IMAGE ----"
+        touch test.jpg  # (ensures file exists)
         curl -s -X POST \
             -H "Content-Type: image/jpeg" \
             --data-binary "@test.jpg" \
