@@ -35,16 +35,32 @@ pipeline {
         stage('Deploy to AWS') {
     steps {
         withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-            sh '''
-            set +e
-            sam deploy --no-confirm-changeset
-            EXIT=$?
-            if [ $EXIT -eq 1 ]; then
-               echo "No changes to deploy — treating as success."
-               exit 0
-            fi
-            exit $EXIT
-            '''
+            script {
+
+                // Run SAM deploy, but DO NOT fail the pipeline automatically
+                def result = sh(
+                    script: "sam deploy --no-confirm-changeset",
+                    returnStdout: true,
+                    returnStatus: true
+                )
+
+                echo "SAM Raw Output:\n${result}"
+
+                // If exit code is 0 → deployment succeeded
+                if (result == 0) {
+                    echo "Deployment succeeded."
+                    return
+                }
+
+                // If output contains "No changes to deploy" → treat as SUCCESS
+                if (result.toString().contains("No changes to deploy")) {
+                    echo "No changes to deploy — marking as success."
+                    return
+                }
+
+                // Otherwise → REAL failure
+                error "Deployment failed: ${result}"
+            }
         }
     }
 }
@@ -54,10 +70,32 @@ pipeline {
 
 
         stage('Smoke Test') {
-            steps {
-                sh 'curl -s https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user || true'
-            }
-        }
+	    steps {
+        echo "Running Smoke Tests..."
+
+        sh '''
+        # 1. Test Create User API
+        CREATE_RESPONSE=$(curl -s -X POST https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user \
+            -H "Content-Type: application/json" \
+            -d '{"name":"TestUser","email":"test@example.com"}')
+
+        echo "Create Response: $CREATE_RESPONSE"
+
+        USER_ID=$(echo $CREATE_RESPONSE | jq -r '.id')
+        echo "User ID: $USER_ID"
+
+        # 2. Test Get User API
+        curl -s https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user/$USER_ID
+
+        # 3. Test Image Upload
+        curl -s -X POST \
+            -H "Content-Type: image/jpeg" \
+            --data-binary "@test.jpg" \
+            https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user/$USER_ID/image
+        '''
+    }
+}
+
     }
 }
 
