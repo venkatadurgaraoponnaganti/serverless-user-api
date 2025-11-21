@@ -35,33 +35,26 @@ pipeline {
        stage('Deploy to AWS') {
 	    steps {
         	withAWS(credentials: 'aws-creds', region: 'ap-south-1') {
-            script {
+           	 script {
 
-                // Run SAM and capture BOTH output + exit code
-                def samOutput = sh(
+                // Capture ONLY output (stdout)
+                def output = sh(
                     script: "sam deploy --no-confirm-changeset",
-                    returnStdout: true,
-                    returnStatus: true
-                )
+                    returnStdout: true
+                ).trim()
 
-                echo "SAM Output: ${samOutput}"
+                echo "SAM Output:\n${output}"
 
-                // If exit code is 0 → success
-                if (samOutput == 0) {
-                    echo "Deployment succeeded"
+                // If SAM returned the 'no changes' message → treat as success
+                if (output.contains("No changes to deploy")) {
+                    echo "No changes to deploy — marking as success."
                     return
-                }
-
-                // Check if SAM output contains the message
-                if (samOutput.toString().contains("No changes to deploy")) {
-                    echo "No changes found — treating as SUCCESS."
-                } else {
-                    error "Deployment failed. See above logs."
                 }
             }
         }
     }
 }
+
  
 
 
