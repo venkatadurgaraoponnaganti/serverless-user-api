@@ -67,13 +67,28 @@ pipeline {
         echo "---- GET USER ----"
         curl -s https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user/$USER_ID
 
+
+        echo "---- GENERATE SAMPLE IMAGE ----"
+        base64 -d > test.jpg <<EOF
+		/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxISEhUTEhMWFhUVFRUVFRUVFRUWFhUWFxUVFRUY
+		HSggGBolGxUVITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGhAQGy0lICYtLS0tLS0tLS0tLS0t
+		LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAKgBLAMBIgACEQEDEQH/xAAb
+		AAACAwEBAQAAAAAAAAAAAAAEBQADBgIBB//EADkQAAIBAwIEAwYEBgIDAQAAAAECAwAEEQUhMQYS
+		QVFhcRMigZGhsfAHFEJSwdHh8SMzUnKColIz/8QAGQEAAwEBAQAAAAAAAAAAAAAAAAECAwQF/8QA
+		JREAAgICAgICAwEAAAAAAAAAAAECEQMhEjFBEyJRYRQj/9oADAMBAAIRAxEAPwD2gAoAoAoAoAoA
+		oAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoAoA//Z
+		EOF
+
+
         echo "---- UPLOAD IMAGE ----"
-        touch test.jpg  # (ensures file exists)
-        curl -s -X POST \
+        UPLOAD_RESPONSE=$(curl -s -X POST \
             -H "Content-Type: image/jpeg" \
             --data-binary "@test.jpg" \
-            https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user/$USER_ID/image
-        '''
+            https://9wtsqkg3yl.execute-api.ap-south-1.amazonaws.com/Prod/user/$USER_ID/image)
+
+        echo "Upload Response: $UPLOAD_RESPONSE"
+        
+'''
     }
 }
 
