@@ -10,7 +10,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/YOUR_USERNAME/serverless-user-api.git'
+                git branch: 'main', url: 'https://github.com/venkatadurgaraoponnaganti/serverless-user-api.git'
             }
         }
 
