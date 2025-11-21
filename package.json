@@ -1,0 +1,9 @@
+{
+  "name": "serverless-user-api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.500.0",
+    "@aws-sdk/client-s3": "^3.500.0"
+  }
+}
+

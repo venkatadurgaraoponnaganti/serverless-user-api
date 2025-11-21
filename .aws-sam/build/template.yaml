@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless User API
+Resources:
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+  UserBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: user-images-${AWS::AccountId}-${AWS::Region}
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: CreateUserFunction
+      Runtime: nodejs18.x
+      Policies:
+      - DynamoDBWritePolicy:
+          TableName: Users
+      Environment:
+        Variables:
+          TABLE_NAME: Users
+      Events:
+        CreateUserAPI:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: POST
+    Metadata:
+      SamResourceId: CreateUserFunction
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: GetUserFunction
+      Runtime: nodejs18.x
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName: Users
+      Environment:
+        Variables:
+          TABLE_NAME: Users
+      Events:
+        GetUserAPI:
+          Type: Api
+          Properties:
+            Path: /user/{id}
+            Method: GET
+    Metadata:
+      SamResourceId: GetUserFunction
+  UploadImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: UploadImageFunction
+      Runtime: nodejs18.x
+      Policies:
+      - S3WritePolicy:
+          BucketName:
+            Ref: UserBucket
+      Environment:
+        Variables:
+          BUCKET_NAME:
+            Ref: UserBucket
+      Events:
+        UploadImageAPI:
+          Type: Api
+          Properties:
+            Path: /user/{id}/image
+            Method: POST
+    Metadata:
+      SamResourceId: UploadImageFunction
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL for Prod stage
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+  UserTableName:
+    Description: DynamoDB Table Name
+    Value:
+      Ref: UserTable
+  UserBucketName:
+    Description: S3 Bucket Name
+    Value:
+      Ref: UserBucket
