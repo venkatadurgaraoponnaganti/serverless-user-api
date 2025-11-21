@@ -24,7 +24,7 @@ pipeline {
 
         stage('SAM Build') {
             steps {
-                sh 'sam build'
+                sh 'sam build --use-container'
             }
         }
 
